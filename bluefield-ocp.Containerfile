@@ -62,18 +62,6 @@ RUN source /kernelver.env && \
   rm -f $package; \
   done
 
-# RUN SRPMS_PATCH_REQUIRED=("mlxbf-pka") && \
-#   wget -r -np -nd -A rpm -e robots=off "${DOCA_SOURCES_URL}/SoC" --accept-regex="$(IFS='|'; echo "(${SRPMS_PATCH_REQUIRED[*]/%/.+\.rpm})")"
-
-# RUN source /kernelver.env && \
-#   PACKAGE="mlxbf-pka" && \
-#   rpm2cpio $PACKAGE-*.src.rpm | cpio -idm && \
-#   rm -f $PACKAGE-*.src.rpm && \
-#   tar -xvf $PACKAGE-*.tar.gz -o && rm -f $PACKAGE-*.tar.gz && \
-#   SRCDIR=$(basename "$PACKAGE"*) && \
-#   tar -czf "${SRCDIR}.tar.gz" $SRCDIR && \
-#   rpmbuild -ba $SRCDIR/*.spec --define 'KMP 1' --define 'compat_cflags -DRHEL_DRM_VERSION=6 -DRHEL_DRM_PATCHLEVEL=12' --define "KVERSION $KVER" --define "_sourcedir $(pwd)" --define "debug_package %{nil}"
-
 RUN ls /root/MLNX_OFED_SRC-${D_OFED_VERSION}/RPMS/redhat-release-*/aarch64
 
 RUN cd /root/MLNX_OFED_SRC-${D_OFED_VERSION}/RPMS/redhat-release-*/aarch64 && \
@@ -98,10 +86,6 @@ ARG COREOS_OPENCONTAINERS_IMAGE_VERSION
 ARG BOOTIMAGES_PACKAGE=mlxbf-bootimages-signed
 ARG FW_PACKAGE=mlnx-fw-updater-signed
 ARG BMC_FW_PACKAGES="bf3-bmc-fw-signed bf3-cec-fw-signed bf3-bmc-gi-signed bf3-bmc-nic-fw*"
-
-RUN mkdir /tmp/rpms
-
-COPY --from=builder /root/rpms/*.rpm /tmp/rpms
 
 ENV D_DOCA_FINALURL=${D_DOCA_BASEURL:-https://linux.mellanox.com/public/repo/doca/${D_DOCA_VERSION}/${D_DOCA_DISTRO}/arm64-dpu/}
 
@@ -134,7 +118,7 @@ EOF
 
 WORKDIR /
 
-RUN \
+RUN --mount=type=bind,from=builder,source=/root/rpms,target=/tmp/rpms \
   # Setup /opt for package installations
   rm opt && mkdir -p usr/opt && ln -s usr/opt opt; \
   ls /tmp/rpms; \
@@ -271,12 +255,7 @@ RUN rpm -e --nodeps ngauge || true && \
   rpm -e --nodeps elfutils-libelf-devel || true && \
   rpm -e --nodeps libyaml-devel || true
 
-COPY assets/doca-ovs_sfc.te /tmp/sfc_controller.te
-
-COPY assets/install-rhcos.sh /usr/bin/install-rhcos.sh
-COPY assets/install-rhcos.service /usr/lib/systemd/system/install-rhcos.service
-
-RUN \
+RUN --mount=type=bind,source=assets,target=/tmp/assets \
   # Copy OFED udev rules
   cp /usr/share/doc/mlnx-ofa_kernel/vf-net-link-name.sh /etc/infiniband/vf-net-link-name.sh && \
   cp /usr/share/doc/mlnx-ofa_kernel/82-net-setup-link.rules /usr/lib/udev/rules.d/82-net-setup-link.rules && \
@@ -288,21 +267,20 @@ RUN \
   echo "hugetlbfs:x:$(getent group hugetlbfs | cut -d: -f3):openvswitch" >> /etc/group && \
   sed -i 's/${tmpdir}/${TMP_DIR}/' /usr/bin/bfcfg && \
   echo "L+ /opt/mellanox - - - - /usr/opt/mellanox" > /etc/tmpfiles.d/link-opt.conf && \
-  checkmodule -M -m -o /tmp/sfc_controller.mod /tmp/sfc_controller.te && \
+  checkmodule -M -m -o /tmp/sfc_controller.mod /tmp/assets/doca-ovs_sfc.te && \
   semodule_package -o /tmp/sfc_controller.pp -m /tmp/sfc_controller.mod && \
   semodule -i /tmp/sfc_controller.pp && \
-  rm -f /tmp/sfc_controller.te /tmp/sfc_controller.mod /tmp/sfc_controller.pp && \
+  rm -f /tmp/sfc_controller.mod /tmp/sfc_controller.pp && \
   #
   # Patch Openvswitch permissions (Workaround)
   sed -i '/OVS_USER_ID/c\OVS_USER_ID="root:root"' /etc/sysconfig/openvswitch && \
   sed -i '/su/c\su root root' /etc/logrotate.d/openvswitch && \
-  # Create a directory for BFB update scripts
-  mkdir -p /opt/mellanox/bfb
-
-COPY bfb/bfb-build/common/install.env/atf-uefi /opt/mellanox/bfb
-COPY bfb/bfb-build/common/install.env/bmc /opt/mellanox/bfb
-COPY bfb/bfb-build/common/install.env/nic-fw /opt/mellanox/bfb
-COPY assets/infojson.sh /opt/mellanox/bfb/infojson.sh
+  # Create a directory for BFB update scripts and copy assets
+  mkdir -p /opt/mellanox/bfb && \
+  cp /tmp/assets/bfb-build/common/install.env/atf-uefi /opt/mellanox/bfb/ && \
+  cp /tmp/assets/bfb-build/common/install.env/bmc /opt/mellanox/bfb/ && \
+  cp /tmp/assets/bfb-build/common/install.env/nic-fw /opt/mellanox/bfb/ && \
+  cp /tmp/assets/infojson.sh /opt/mellanox/bfb/infojson.sh
 
 RUN chmod +x /usr/bin/install-rhcos.sh; \
   systemctl enable acpid.service || true; \
@@ -321,8 +299,7 @@ RUN set -xe; kver=$(ls /usr/lib/modules); env DRACUT_NO_XATTR=1 dracut -vf /usr/
   update-pciids && \
   ostree container commit
 
-LABEL "rhcos.version"="${RHCOS_VERSION}"
-LABEL "rhcos.doca.version"="${D_DOCA_VERSION}"
 LABEL "com.coreos.osname"=rhcos
-LABEL "rhcos.custom.tag"="${IMAGE_TAG}"
-LABEL "org.opencontainers.image.version"="${COREOS_OPENCONTAINERS_IMAGE_VERSION}"
+LABEL "OCP.version"="${RHCOS_VERSION}"
+LABEL "NVIDIA.DOCA.version"="${D_DOCA_VERSION}"
+LABEL "NVIDIA.OFED.version"="${D_OFED_VERSION}"
