@@ -134,7 +134,6 @@ EOF
 
 WORKDIR /
 
-RUN \
 RUN if [ "$KERNEL_TYPE" = "64k" ]; then \
   echo "Installing 64k kernel variant..." && \
   KVER=$(rpm -q kernel-core --queryformat '%{VERSION}-%{RELEASE}') && \
