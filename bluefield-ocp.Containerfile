@@ -259,6 +259,7 @@ RUN dnf -y install --setopt=install_weak_deps=False \
   ucx-cma \
   ucx-ib \
   ucx-rdmacm \
+  usbutils \
   acpid \
   mstflint \
   mft-autocomplete \
