@@ -269,7 +269,8 @@ RUN dnf -y install --setopt=install_weak_deps=False \
   efibootmgr \
   i2c-tools \
   ipmitool \
-  nvmetcli\
+  nvmetcli \
+  usbutils \
   ${BMC_FW_PACKAGES} \
   vim-common \
   dhcp-client && \

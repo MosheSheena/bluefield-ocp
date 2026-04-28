@@ -6,6 +6,7 @@ ARG D_DOCA_VERSION
 ARG D_DOCA_BASEURL
 ARG D_DOCA_BASEURL_AUTH=false
 ARG D_DOCA_BASEURL_AUTH_CREDS=
+ARG D_OFED_VERSION
 ARG KERNEL_TYPE=default
 
 ######################################################################
@@ -25,6 +26,7 @@ ARG D_DOCA_DISTRO
 ARG D_DOCA_BASEURL
 ARG D_DOCA_BASEURL_AUTH=false
 ARG D_DOCA_BASEURL_AUTH_CREDS
+ARG D_OFED_VERSION
 ARG IMAGE_TAG
 ARG COREOS_OPENCONTAINERS_IMAGE_VERSION
 ARG BOOTIMAGES_PACKAGE=mlxbf-bootimages-signed
@@ -202,7 +204,8 @@ RUN dnf -y install --setopt=install_weak_deps=False \
   efibootmgr \
   i2c-tools \
   ipmitool \
-  nvmetcli\
+  nvmetcli \
+  usbutils \
   ${BMC_FW_PACKAGES} \
   vim-common \
   dhcp-client && \
@@ -264,5 +267,6 @@ LABEL "rhcos.kernel.type"="${KERNEL_TYPE}"
 LABEL "com.coreos.osname"=rhcos
 LABEL "OCP.version"="${RHCOS_VERSION}"
 LABEL "NVIDIA.DOCA.version"="${D_DOCA_VERSION}"
+LABEL "NVIDIA.OFED.version"="${D_OFED_VERSION}"
 LABEL "bluefield-ocp.version"="${BLUEFIELD_OCP_VERSION}"
 LABEL "bluefield-ocp.branch"="${BLUEFIELD_OCP_BRANCH}"
