@@ -59,10 +59,7 @@ ENV HOME=/build
 
 WORKDIR /root
 
-RUN SRPMS=("bluefield_edac" "tmfifo" "pwr-mlxbf"  "gpio-mlxbf" "gpio-mlxbf2" "gpio-mlxbf3" "mlx-bootctl" \
-  "dw-mmc-bluefield" "i2c-mlxbf" "mlx-cpld" \
-  "mlxbf-pmc" "mlxbf-ptm" "mlxbf-pka" \
-  "mlxbf-livefish" "mlxbf-gige" "mlx-trio" "ipmb-dev-int" "ipmb-host" "pinctrl-mlxbf3" "sdhci-of-dwcmshc") && \
+RUN SRPMS=("mlxbf-pka" "ipmb-host") && \
   wget -r -np -nd -A rpm -e robots=off "${SOC_SOURCES_URL}" --accept-regex="$(IFS='|'; echo "(${SRPMS[*]/%/.+\.rpm})")"
 
 RUN source /kernelver.env && \
