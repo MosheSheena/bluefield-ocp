@@ -273,9 +273,8 @@ RUN dnf -y install --setopt=install_weak_deps=False \
   dhcp-client && \
   dnf clean all && \
   #
-  # rpm -e --nodeps ngauge || true && \
-  # rpm -e --nodeps spdk || true && \
-  # rpm -e --nodeps collectx-clxapi || true && \
+  rpm -e --nodeps ngauge || true && \
+  rpm -e --nodeps spdk || true && \
   rpm -e --nodeps doca-dms || true && \
   rpm -e --nodeps libnl3-devel || true && \
   rpm -e --nodeps kernel-headers || true && \
