@@ -18,7 +18,12 @@ ARG D_OFED_VERSION
 ARG KERNEL_TYPE=default
 
 
-ARG DOCA_SOURCES_URL="https://linux.mellanox.com/public/repo/doca/${D_DOCA_VERSION}/SOURCES"
+# Full URL to the MLNX_OFED_SRC-<ver>.tgz tarball.
+ARG DOCA_SOURCES_URL="https://linux.mellanox.com/public/repo/doca/${D_DOCA_VERSION}/SOURCES/mlnx_ofed/MLNX_OFED_SRC-${D_OFED_VERSION}.tgz"
+# URL to a directory listing of BlueField SoC source RPMs (must serve directory
+# index, e.g. an Apache/nginx autoindex).  The directory is fetched recursively
+# and the package whitelist below is filtered out of it.
+ARG SOC_SOURCES_URL="https://linux.mellanox.com/public/repo/doca/${D_DOCA_VERSION}/SOURCES/SoC/"
 
 WORKDIR /root
 
@@ -33,10 +38,7 @@ ARG D_OFED_SRC_ARCHIVE="MLNX_OFED_SRC-${D_OFED_SRC_TYPE}${D_OFED_VERSION}.tgz"
 
 RUN dnf install -y automake autoconf libtool perl && dnf clean all
 
-RUN wget --no-check-certificate -O ${D_OFED_SRC_ARCHIVE} ${DOCA_SOURCES_URL}/mlnx_ofed/${D_OFED_SRC_ARCHIVE}; \
-  if [ $? -ne 0 ]; then \
-  wget --no-check-certificate -O ${D_OFED_SRC_ARCHIVE} ${DOCA_SOURCES_URL}/MLNX_OFED/${D_OFED_SRC_ARCHIVE}; \
-  fi
+RUN wget --no-check-certificate -O ${D_OFED_SRC_ARCHIVE} ${DOCA_SOURCES_URL}
 
 RUN if file ${D_OFED_SRC_ARCHIVE} | grep compressed; then \
   tar -xzf ${D_OFED_SRC_ARCHIVE}; \
@@ -57,11 +59,8 @@ ENV HOME=/build
 
 WORKDIR /root
 
-RUN SRPMS=("bluefield_edac" "tmfifo" "pwr-mlxbf"  "gpio-mlxbf" "gpio-mlxbf2" "gpio-mlxbf3" "mlx-bootctl" \
-  "dw-mmc-bluefield" "i2c-mlxbf" "mlx-cpld" \
-  "mlxbf-pmc" "mlxbf-ptm" "mlxbf-pka" \
-  "mlxbf-livefish" "mlxbf-gige" "mlx-trio" "ipmb-dev-int" "ipmb-host" "pinctrl-mlxbf3" "sdhci-of-dwcmshc") && \
-  wget -r -np -nd -A rpm -e robots=off "${DOCA_SOURCES_URL}/SoC/" --accept-regex="$(IFS='|'; echo "(${SRPMS[*]/%/.+\.rpm})")"
+RUN SRPMS=("mlxbf-pka" "ipmb-host") && \
+  wget -r -np -nd -A rpm -e robots=off "${SOC_SOURCES_URL}" --accept-regex="$(IFS='|'; echo "(${SRPMS[*]/%/.+\.rpm})")"
 
 RUN source /kernelver.env && \
   for package in *.src.rpm; do \
@@ -276,7 +275,6 @@ RUN dnf -y install --setopt=install_weak_deps=False \
   #
   rpm -e --nodeps ngauge || true && \
   rpm -e --nodeps spdk || true && \
-  rpm -e --nodeps collectx-clxapi || true && \
   rpm -e --nodeps doca-dms || true && \
   rpm -e --nodeps libnl3-devel || true && \
   rpm -e --nodeps kernel-headers || true && \
