@@ -45,7 +45,7 @@
 5. Build the container image:
 
     ```bash
-    podman build --squash -f rhcos-bfb.Containerfile \
+    podman build -f rhcos-bfb.Containerfile \
       --authfile $PULL_SECRET \
       --build-arg RHCOS_VERSION=$RHCOS_VERSION \
       --build-arg TARGET_IMAGE=$TARGET_IMAGE \
