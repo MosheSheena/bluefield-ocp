@@ -324,6 +324,7 @@ RUN chmod +x /usr/bin/install-rhcos.sh; \
 
 # Finalize the container image
 RUN set -xe; kver=$(ls /usr/lib/modules); env DRACUT_NO_XATTR=1 dracut -vf /usr/lib/modules/$kver/initramfs.img "$kver"; \
+  ldconfig && \
   rm /opt && ln -s /var/opt /opt; \
   dnf clean all -y && \
   rm -rf /var/cache/* /var/log/* /etc/machine-id && \
