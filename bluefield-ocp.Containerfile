@@ -159,7 +159,7 @@ RUN \
 
 RUN dnf -y install python3-dnf-plugin-priorities
 
-RUN dnf -y install --setopt=install_weak_deps=False \
+RUN dnf -y install --setopt=install_weak_deps=False --exclude=bf-release \
   doca-runtime \
   collectx-clxapi \
   doca-apsh-config \
@@ -245,6 +245,13 @@ RUN dnf -y install --setopt=install_weak_deps=False \
   vim-common \
   dhcp-client && \
   dnf clean all && \
+  # bf-release ships /etc/crictl.yaml which conflicts with cri-o at RPM
+  # transaction-test time (before any files are written, before %post runs).
+  # Install it separately with --replacefiles to bypass the conflict check.
+  # Its %post detects VARIANT_ID=coreos and removes the conflicting files.
+  dnf download -y --destdir=/tmp bf-release && \
+  rpm -ivh --replacefiles --nodeps /tmp/bf-release-*.aarch64.rpm && \
+  rm -f /tmp/bf-release-*.aarch64.rpm && \
   #
   rpm -e --nodeps ngauge || true && \
   rpm -e --nodeps spdk || true && \
