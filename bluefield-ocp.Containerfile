@@ -311,7 +311,7 @@ RUN systemctl enable acpid.service || true; \
   bash /opt/mellanox/bfb/infojson.sh > /opt/mellanox/bfb/info.json
 
 # Finalize the container image
-RUN set -xe; kver=$(ls /usr/lib/modules); env DRACUT_NO_XATTR=1 dracut -vf /usr/lib/modules/$kver/initramfs.img "$kver"; \
+RUN set -xe; kver=$(ls /usr/lib/modules | sort -V | tail -1); env DRACUT_NO_XATTR=1 dracut -vf /usr/lib/modules/$kver/initramfs.img "$kver"; \
   sed -i 's|/opt/mellanox|/usr/opt/mellanox|g' /etc/ld.so.conf.d/*.conf; \
   rm /opt && ln -s /var/opt /opt; \
   ldconfig && \
