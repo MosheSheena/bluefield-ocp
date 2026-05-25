@@ -218,6 +218,8 @@ RUN dnf -y install --setopt=install_weak_deps=False \
   mlxbf-bfscripts \
   ${BOOTIMAGES_PACKAGE} \
   ${FW_PACKAGE} \
+  mlnx-ofa_kernel \
+  kmod-mlnx-ofa_kernel \
   ofed-scripts \
   opensm \
   opensm-libs \
