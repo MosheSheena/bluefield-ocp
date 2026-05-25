@@ -157,7 +157,7 @@ RUN \
   ose-aws-ecr-image-credential-provider \
   ose-gcp-gcr-image-credential-provider;
 
-RUN dnf -y install python3-dnf-plugin-priorities
+RUN dnf -y install python3-dnf-plugins-core
 
 RUN dnf -y install --setopt=install_weak_deps=False --exclude=bf-release \
   doca-runtime \
