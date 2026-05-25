@@ -318,3 +318,20 @@ LABEL "NVIDIA.DOCA.version"="${D_DOCA_VERSION}"
 LABEL "NVIDIA.OFED.version"="${D_OFED_VERSION}"
 LABEL "bluefield-ocp.version"="${BLUEFIELD_OCP_VERSION}"
 LABEL "bluefield-ocp.branch"="${BLUEFIELD_OCP_BRANCH}"
+
+ARG release=22
+ARG version=v4
+
+LABEL com.redhat.component="bluefield-ocp-layer-rhel10" \
+      name="dpu-kit-for-nvidia-operator/bluefield-ocp-layer-rhel10" \
+      version="${version}" \
+      upstream-ref="${version}" \
+      upstream-url="https://github.com/rh-ecosystem-edge/bluefield-ocp" \
+      url="https://github.com/rh-ecosystem-edge/bluefield-ocp" \
+      summary="DPU Kit for NVIDIA Operator - Bluefield OCP Layer" \
+      io.k8s.display-name="DPU Kit for NVIDIA Operator - Bluefield OCP Layer" \
+      description="DPU Kit for NVIDIA Operator - Bluefield OCP Layer" \
+      io.k8s.description="DPU Kit for NVIDIA Operator - Bluefield OCP Layer" \
+      distribution-scope="public" \
+      release="${release}" \
+      cpe="cpe:/a:redhat:dpu_kit:4.22::el10"
