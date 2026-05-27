@@ -157,6 +157,16 @@ RUN \
   ose-aws-ecr-image-credential-provider \
   ose-gcp-gcr-image-credential-provider;
 
+RUN dnf -y install python3-dnf-plugins-core
+
+# Pre-install bf-release before the main transaction so dnf finds it already
+# satisfied in the RPM DB and skips re-installing it — avoiding the cri-o
+# file conflict on /etc/crictl.yaml that only triggers during installation.
+# The %post script detects VARIANT_ID=coreos and removes the conflicting files.
+RUN dnf download -y --destdir=/tmp bf-release && \
+  rpm -ivh --replacefiles --nodeps /tmp/bf-release-*.aarch64.rpm && \
+  rm -f /tmp/bf-release-*.aarch64.rpm
+
 RUN dnf -y install --setopt=install_weak_deps=False \
   doca-runtime \
   collectx-clxapi \
@@ -216,6 +226,8 @@ RUN dnf -y install --setopt=install_weak_deps=False \
   mlxbf-bfscripts \
   ${BOOTIMAGES_PACKAGE} \
   ${FW_PACKAGE} \
+  mlnx-ofa_kernel \
+  kmod-mlnx-ofa_kernel \
   ofed-scripts \
   opensm \
   opensm-libs \
@@ -299,7 +311,7 @@ RUN systemctl enable acpid.service || true; \
   bash /opt/mellanox/bfb/infojson.sh > /opt/mellanox/bfb/info.json
 
 # Finalize the container image
-RUN set -xe; kver=$(ls /usr/lib/modules); env DRACUT_NO_XATTR=1 dracut -vf /usr/lib/modules/$kver/initramfs.img "$kver"; \
+RUN set -xe; kver=$(ls /usr/lib/modules | sort -V | tail -1); env DRACUT_NO_XATTR=1 dracut -vf /usr/lib/modules/$kver/initramfs.img "$kver"; \
   sed -i 's|/opt/mellanox|/usr/opt/mellanox|g' /etc/ld.so.conf.d/*.conf; \
   rm /opt && ln -s /var/opt /opt; \
   ldconfig && \
