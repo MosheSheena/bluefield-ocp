@@ -237,7 +237,6 @@ RUN dnf -y install --setopt=install_weak_deps=False \
   kmod-srp \
   kmod-kernel-mft-mlnx \
   kmod-mlnx-nvme \
-  kmod-mlnx-nfsrdma \
   kmod-xpmem \
   mlnx-tools \
   ofed-scripts \
