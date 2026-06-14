@@ -52,7 +52,8 @@ ENV D_DOCA_FINALURL=${D_DOCA_BASEURL:-https://linux.mellanox.com/public/repo/doc
 
 RUN --mount=type=secret,id=d-doca-baseurl-auth-creds/username-and-password \
   dnf config-manager --set-enabled codeready-builder-for-rhel-9-$(uname -m)-rpms || \
-  dnf config-manager --set-enabled codeready-builder-beta-for-rhel-9-$(uname -m)-rpms; \
+  dnf config-manager --set-enabled codeready-builder-beta-for-rhel-9-$(uname -m)-rpms || \
+  dnf config-manager --set-enabled codeready-builder-for-rhel-10-$(uname -m)-rpms || true; \
   dnf clean all; \
   mkdir -p /tmp/rpms; \
   if [ "${D_DOCA_BASEURL_AUTH}" = "true" ]; then \
@@ -297,14 +298,17 @@ RUN --mount=type=bind,source=assets,target=/tmp/assets \
   # Patch Openvswitch permissions (Workaround)
   sed -i '/OVS_USER_ID/c\OVS_USER_ID="root:root"' /etc/sysconfig/openvswitch && \
   sed -i '/su/c\su root root' /etc/logrotate.d/openvswitch && \
-  # Change log paths
-  sed -i 's/\/run\/log/\/var\/log/i' /etc/logrotate.d/set_emu_param && \
-  sed -i 's/\/run\/log/\/var\/log/i' /etc/logrotate.d/mlx_ipmid && \
-  sed -i 's/\/run\/log/\/var\/log/i' /etc/rsyslog.d/set_emu_param.conf && \
-  sed -i 's/\/run\/log/\/var\/log/i' /etc/rsyslog.d/mlx_ipmid.conf && \
-  sed -i 's/\/run\/log/\/var\/log/i' /usr/bin/mlx_ipmid_init.sh && \
-  sed -i 's/\/run\/log/\/var\/log/i' /usr/lib/systemd/system/set_emu_param.service && \
-  sed -i 's/\/run\/log/\/var\/log/i' /usr/lib/systemd/system/mlx_ipmid.service && \
+  # Change log paths (files may not exist on all distros; skip gracefully)
+  for f in \
+    /etc/logrotate.d/set_emu_param \
+    /etc/logrotate.d/mlx_ipmid \
+    /etc/rsyslog.d/set_emu_param.conf \
+    /etc/rsyslog.d/mlx_ipmid.conf \
+    /usr/bin/mlx_ipmid_init.sh \
+    /usr/lib/systemd/system/set_emu_param.service \
+    /usr/lib/systemd/system/mlx_ipmid.service; do \
+    [ -f "$f" ] && sed -i 's/\/run\/log/\/var\/log/i' "$f" || true; \
+  done && \
   # Plant the pre-built ipmi_sim SDR persistence file.
   # ipmi_sim (mlx-OpenIPMI) does not auto-generate SDR records from the .emu
   # configuration at runtime on RHCOS; it only reads a pre-existing persistence
